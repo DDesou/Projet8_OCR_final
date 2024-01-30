@@ -1,16 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC Kernel : Python 3.10.12
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC source myenv/bin/activate
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC # 0. Define mounts
+# MAGIC # 0. Creation of the mounts
 
 # COMMAND ----------
 
@@ -29,7 +19,6 @@ dbutils.fs.mount(
     extra_configs = {"fs.azure.account.key.projet8images.blob.core.windows.net": storage_account_key}
 )
 
-
 # COMMAND ----------
 
 # MAGIC %md
@@ -38,12 +27,29 @@ dbutils.fs.mount(
 # COMMAND ----------
 
 storage_account_name = "projet8images"
-container_name = "results"
+container_name = "results2"
 storage_account_key = "zez1wQv/LGqyCCNn1LAKv0jTyT29ilq0/ccqsEHT1X4CyKOlHa7bOAPu7xm5xglPmnCU1UVFvRnb+AStFfOftw=="
 
 dbutils.fs.mount(
     source = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/",
-    mount_point = "/mnt/results",
+    mount_point = "/mnt/results2",
+    extra_configs = {"fs.azure.account.key.projet8images.blob.core.windows.net": storage_account_key}
+)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **result table container mount**
+
+# COMMAND ----------
+
+storage_account_name = "projet8images"
+container_name = "mytables"
+storage_account_key = "zez1wQv/LGqyCCNn1LAKv0jTyT29ilq0/ccqsEHT1X4CyKOlHa7bOAPu7xm5xglPmnCU1UVFvRnb+AStFfOftw=="
+
+dbutils.fs.mount(
+    source = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/",
+    mount_point = "/mnt/mytables",
     extra_configs = {"fs.azure.account.key.projet8images.blob.core.windows.net": storage_account_key}
 )
 
@@ -58,11 +64,7 @@ dbutils.fs.ls("/mnt/projet8/fruits/fruits/fruits-360-original-size/fruits-360-or
 
 # COMMAND ----------
 
-dbutils.fs.ls("/mnt/results/")
-
-# COMMAND ----------
-
-os.getcwd()
+dbutils.fs.ls("/mnt/results2/")
 
 # COMMAND ----------
 
@@ -71,13 +73,13 @@ os.getcwd()
 
 # COMMAND ----------
 
-# File system manangement
+#File system manangement
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1' 
 from os import listdir
-#import zipfile
-#from zipfile import ZipFile
 
-#import pyspark.pandas as ps
+from pathlib import Path
+import pandas as pd
 import pyspark.pandas as ps
 from PIL import Image
 import numpy as np
@@ -99,13 +101,12 @@ import matplotlib.pyplot as plt
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Installations
+os.getcwd()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC explorer.exe .
+# MAGIC ## Installations (if needed)
 
 # COMMAND ----------
 
@@ -118,15 +119,7 @@ import matplotlib.pyplot as plt
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC # II. Extract zip files + define paths
-
-# COMMAND ----------
-
-#PATH = os.getcwd()
-
-# COMMAND ----------
-
-#PATH
+# MAGIC # II. Define paths
 
 # COMMAND ----------
 
@@ -134,38 +127,23 @@ PATH_Data = "/mnt/projet8/fruits/fruits/fruits-360-original-size/fruits-360-orig
 
 # COMMAND ----------
 
-PATH_Result = '/mnt/results/'
+PATH_Result = '/mnt/results2/'
+
+# COMMAND ----------
+
+PATH_Tables = '/mnt/mytables/'
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Open zip files
+# MAGIC # III. Notebook from another person
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC with zipfile.ZipFile("Mode_opératoire.zip","r") as zip_ref:
-# MAGIC     zip_ref.extractall("targetdir")
-
-# COMMAND ----------
-
-#"C:\Users\denis\Downloads\fruits.zip"
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC with zipfile.ZipFile("fruits.zip","r") as zip_ref:
-# MAGIC     zip_ref.extractall("images")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC # III. Notebook from other
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## III.1 Création de la SparkSession
+# MAGIC ## III.1 Création de la SparkSession (not necessary)
+# MAGIC
+# MAGIC
 # MAGIC
 # MAGIC L’application Spark est contrôlée grâce à un processus de pilotage (driver process) appelé **SparkSession**. <br />
 # MAGIC <u>Une instance de **SparkSession** est la façon dont Spark exécute les fonctions définies par l’utilisateur <br />
@@ -182,18 +160,25 @@ PATH_Result = '/mnt/results/'
 
 # COMMAND ----------
 
-spark = (SparkSession
-             .builder
-             .appName('P8')
-             .master('local')
-             .config("spark.sql.parquet.writeLegacyFormat", 'true')
-             .getOrCreate()
-)
+# MAGIC %md
+# MAGIC **not necessary anymore**
+# MAGIC spark = (SparkSession
+# MAGIC              .builder
+# MAGIC              .appName('P8')
+# MAGIC              .master('local')
+# MAGIC              .config("spark.sql.parquet.writeLegacyFormat", 'true')
+# MAGIC              .getOrCreate()
+# MAGIC )
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC <u>Nous créons également la variable "**sc**" qui est un **SparkContext** issue de la variable **spark**</u> :
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## III.2 SparkContext
 
 # COMMAND ----------
 
@@ -211,7 +196,7 @@ spark
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## III.2 Traitement des données
+# MAGIC ## III.3 Traitement des données
 # MAGIC
 # MAGIC <u>Dans la suite de notre flux de travail, <br />
 # MAGIC nous allons successivement</u> :
@@ -235,7 +220,7 @@ spark
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### III.2.1 Chargement des données
+# MAGIC ### III.3.1 Chargement des données
 # MAGIC
 # MAGIC Les images sont chargées au format binaire, ce qui offre, <br />
 # MAGIC plus de souplesse dans la façon de prétraiter les images.
@@ -277,7 +262,7 @@ print(images.select('path','label').show(5,False))
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### III.7.2 Préparation du modèle
+# MAGIC ### III.3.2 Préparation du modèle
 # MAGIC
 # MAGIC Je vais utiliser la technique du **transfert learning** pour extraire les features des images.<br />
 # MAGIC J'ai choisi d'utiliser le modèle **MobileNetV2** pour sa rapidité d'exécution comparée <br />
@@ -317,7 +302,7 @@ model = MobileNetV2(weights='imagenet',
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### /!\ added step!!
+# MAGIC ### III.3.3 Broadcast weights (added)
 
 # COMMAND ----------
 
@@ -367,7 +352,7 @@ def model_fn():
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### III.7.3 Définition du processus de chargement des images et application <br/>de leur featurisation à travers l'utilisation de pandas UDF
+# MAGIC ### III.3.4 Définition du processus de chargement des images et application <br/>de leur featurisation à travers l'utilisation de pandas UDF
 # MAGIC
 # MAGIC Ce notebook définit la logique par étapes, jusqu'à Pandas UDF.
 # MAGIC
@@ -438,8 +423,8 @@ def featurize_udf(content_series_iter):
 # MAGIC <u>REMARQUE</u> : Cela peut prendre beaucoup de temps, tout dépend du volume de données à traiter. <br />
 # MAGIC
 # MAGIC Notre jeu de données de **Test** contient **22819 images**. <br />
-# MAGIC Cependant, dans l'exécution en mode **local**, <br />
-# MAGIC nous <u>traiterons un ensemble réduit de **330 images**</u>.
+# MAGIC Cependant, dans l'exécution en mode **local** => not anymore, <br />
+# MAGIC nous <u>traiterons un ensemble réduit de **330 images** =>no </u>.
 
 # COMMAND ----------
 
@@ -487,15 +472,6 @@ df.head(2)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <u>On affiche les 5 premières lignes du DataFrame</u> :
-
-# COMMAND ----------
-
-df.head()
-
-# COMMAND ----------
-
-# MAGIC %md
 # MAGIC <u>On valide que la dimension du vecteur de caractéristiques des images est bien de dimension 1280</u> :
 
 # COMMAND ----------
@@ -537,7 +513,7 @@ df.features.to_numpy()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## First try : discarded
+# MAGIC ## V.1 First try : discarded
 
 # COMMAND ----------
 
@@ -728,7 +704,7 @@ df_read.collect()[0][0][-1]
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## /!\ Second PCA (ok)
+# MAGIC ## V.2 Second PCA (ok)
 
 # COMMAND ----------
 
@@ -783,6 +759,7 @@ plt.plot(range(1,num_elements+1), cumValues, marker = 'o', linestyle='--')
 plt.title('variance by components')
 plt.xlabel('num of components')
 plt.ylabel('cumulative explained variance')
+plt.show()
 
 # COMMAND ----------
 
@@ -837,7 +814,7 @@ type(features_df)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## IV.1 Define path results
+# MAGIC ## IV.1 Defining path results + saving
 
 # COMMAND ----------
 
@@ -845,12 +822,12 @@ PATH_Result
 
 # COMMAND ----------
 
-parquet_path = PATH_Result+'/myparquet'
+pca_path = PATH_Result+'/mypca'
 
 # COMMAND ----------
 
 # Save the DataFrame to a Parquet file
-features_df.write.parquet(parquet_path)
+features_df.write.parquet(pca_path)
 
 # COMMAND ----------
 
@@ -860,12 +837,12 @@ features_df.write.parquet(parquet_path)
 # COMMAND ----------
 
 # Read the Parquet file to verify
-df_read = spark.read.parquet(parquet_path)
+df_read = spark.read.parquet(pca_path)
 df_read.show()
 
 # COMMAND ----------
 
-df_ = ps.read_parquet(parquet_path, engine='pyarrow')
+df_ = ps.read_parquet(pca_path, engine='pyarrow')
 
 # COMMAND ----------
 
@@ -881,16 +858,15 @@ type(df_)
 
 # COMMAND ----------
 
-from pathlib import Path
-import pandas as pd
+
 
 # COMMAND ----------
 
-parquet_path
+pca_path
 
 # COMMAND ----------
 
-data_dir = Path(parquet_path)
+data_dir = Path(pca_path)
 
 # COMMAND ----------
 
@@ -898,22 +874,27 @@ data_dir.glob('*.parquet')
 
 # COMMAND ----------
 
-dbutils.fs.ls(parquet_path)[-1][0]
+dbutils.fs.ls(pca_path)[-1][0]
 
 # COMMAND ----------
 
-ps.read_parquet(dbutils.fs.ls(parquet_path)[-1][0], engine='pyarrow').head(3)
+ps.read_parquet(dbutils.fs.ls(pca_path)[-1][0], engine='pyarrow').head(3)
 
 # COMMAND ----------
 
 l = []
-for elt in dbutils.fs.ls(parquet_path):
+for elt in dbutils.fs.ls(pca_path):
     if elt[0].endswith('.parquet'):
         l.append(elt[0])
 
 # COMMAND ----------
 
 l
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Convert to pandasDF
 
 # COMMAND ----------
 
@@ -959,11 +940,15 @@ pandasDF.head(3)
 
 # COMMAND ----------
 
+pandasDF.shape
+
+# COMMAND ----------
+
 type(pandasDF)
 
 # COMMAND ----------
 
-PATH_Result
+PATH_Tables
 
 # COMMAND ----------
 
@@ -972,116 +957,20 @@ PATH_Result
 
 # COMMAND ----------
 
-import os
-if not os.path.exists('dbfs:/mnt/results/'):
-    os.makedirs('dbfs:/mnt/results/')
-pandasDF.to_csv('dbfs:/mnt/results/table.csv')
+pandasDF.to_csv('/dbfs/mnt/mytables/table.csv')
 
 # COMMAND ----------
 
-import os
-if not os.path.exists('dbfs:/mnt/results/mytable/'):
-    os.makedirs('dbfs:/mnt/results/mytable/')
-pandasDF.to_csv('dbfs:/mnt/results/my/table/table.csv')
-
-# COMMAND ----------
-
-dbutils.fs.put("dbfs:/mnt/results/tst.txt","Testing file creation and existence")
-
-# COMMAND ----------
-
-file = '/dbfs/mnt/results/table.csv'
-
-# COMMAND ----------
-
-#pandasDF.to_csv(file, encoding='utf-8')
-
-# COMMAND ----------
-
-dbutils.fs.ls(PATH_Result)
+dbutils.fs.ls(PATH_Tables)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## IV.3 Saving as csv file (canceled)
+# MAGIC ## IV.3 Open the csv data (ok!)
 
 # COMMAND ----------
 
-df2 = df_.drop(columns=['vector_features'])
-
-# COMMAND ----------
-
-df2.head(3)
-
-# COMMAND ----------
-
-df2.shape, df2.columns
-
-# COMMAND ----------
-
-df2.info()
-
-# COMMAND ----------
-
-type(df2)
-
-# COMMAND ----------
-
-str(df2.features[0])
-
-# COMMAND ----------
-
-df2['features'] = df2.features.astype(str)
-
-# COMMAND ----------
-
-list_pca = df2.pca200.to_numpy()
-
-# COMMAND ----------
-
-list_pca[0]
-
-# COMMAND ----------
-
-df2.head(3)
-
-# COMMAND ----------
-
-import pyspark.sql.functions as F
-import pyspark.sql.types as T
-
-#or: to_array = F.udf(lambda v: list([float(x) for x in v]), T.ArrayType(T.FloatType()))
-to_array = F.udf(lambda v: v.toArray().tolist(), T.ArrayType(T.FloatType()))
-df2.insert(4, 'PCA', to_array('pca200'))
-
-# COMMAND ----------
-
-df2.PCA[0]
-
-# COMMAND ----------
-
-df2 = df2.drop(columns=['pca200'])
-
-# COMMAND ----------
-
-df2['PCA'] = df2.PCA.astype(str)
-
-# COMMAND ----------
-
-type(df2), type(pandasDF)
-
-# COMMAND ----------
-
-df2.to_csv(PATH_Result+'/myresults')
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## IV.4 Open the csv data (ok!)
-
-# COMMAND ----------
-
-csv_path = PATH_Result #+'/myresults'
+csv_path = PATH_Tables
 
 # COMMAND ----------
 
