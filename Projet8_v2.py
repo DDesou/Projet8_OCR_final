@@ -39,6 +39,19 @@ dbutils.fs.mount(
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC storage_account_name = "projet8images"
+# MAGIC container_name = "results3"
+# MAGIC storage_account_key = "zez1wQv/LGqyCCNn1LAKv0jTyT29ilq0/ccqsEHT1X4CyKOlHa7bOAPu7xm5xglPmnCU1UVFvRnb+AStFfOftw=="
+# MAGIC
+# MAGIC dbutils.fs.mount(
+# MAGIC     source = f"wasbs://{container_name}@{storage_account_name}.blob.core.windows.net/",
+# MAGIC     mount_point = "/mnt/results3",
+# MAGIC     extra_configs = {"fs.azure.account.key.projet8images.blob.core.windows.net": storage_account_key}
+# MAGIC )
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC **result table container mount**
 
 # COMMAND ----------
@@ -984,4 +997,17 @@ df3.head(3)
 
 # COMMAND ----------
 
+type(df3.to_pandas())
+
+# COMMAND ----------
+
 df3.info()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## IV.4 Save csv in my workspace
+
+# COMMAND ----------
+
+df3.to_pandas().to_csv(os.getcwd()+'/table.csv')
