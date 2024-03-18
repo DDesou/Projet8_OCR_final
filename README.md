@@ -1,4 +1,5 @@
-# OC_Project8 (D. Desoubzdanne-Dumont le 31/01/2024)
+# OCR_Project8 (D. Desoubzdanne-Dumont le 31/01/2024)
+# **Déployez un modèle dans le cloud**
 ## Projet OpenClassroom parcours Data Scientist
 ### Description du déploiement cloud et du Notebook DataBricks
 
